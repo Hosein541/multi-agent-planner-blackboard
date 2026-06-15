@@ -1,0 +1,7 @@
+__pycache__/
+
+*.rar
+*.ipynb
+*.lock
+test.py 
+*.env
