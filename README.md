@@ -4,8 +4,7 @@
 
 This system helps users create realistic, prioritized, and motivating daily plans by leveraging specialized agents that collaborate through a shared blackboard.
 
-![Blackboard Planner](https://via.placeholder.com/800x400?text=Blackboard+Planner+Demo)  
-*(Add a screenshot or GIF here later)*
+![Blackboard Planner](https://github.com/user-attachments/assets/9dd470eb-a92b-4a72-b86a-094aa4f4a299)  
 
 ---
 
@@ -40,7 +39,7 @@ This system helps users create realistic, prioritized, and motivating daily plan
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/Hosein541/multi-agent-planner-blackboard.git
-cd blackboard-planner
+cd multi-agent-planner-blackboard
 ```
 ### 2. Install Dependencies with Poetry
 ```bash
