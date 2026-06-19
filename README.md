@@ -4,11 +4,12 @@
 
 This system helps users create realistic, prioritized, and motivating daily plans by leveraging specialized agents that collaborate through a shared blackboard.
 
-![Blackboard Planner](https://github.com/user-attachments/assets/9dd470eb-a92b-4a72-b86a-094aa4f4a299)  
+
 ## Demo
 [🎥 Watch Demo](https://github.com/user-attachments/assets/9dd470eb-a92b-4a72-b86a-094aa4f4a299)
 ---
-
+## Demo
+[🎥 Watch Demo](https://github.com/user-attachments/assets/15d97fe7-30bd-4b99-a7c6-a08a3f780eaa)
 ## ✨ Features
 
 - **Blackboard Architecture**: Multiple specialized agents collaborate via a shared memory (blackboard)
