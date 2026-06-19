@@ -1,6 +1,7 @@
 __pycache__/
 outputs/
 
+*.mp4
 *.rar
 *.ipynb
 *.lock
