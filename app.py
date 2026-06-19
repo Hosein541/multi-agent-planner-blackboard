@@ -4,7 +4,8 @@ import os
 import re
 from langchain_google_genai import ChatGoogleGenerativeAI
 from board import build_blackboard_graph
-
+from chat import handle_chat_message
+from datetime import datetime
 
 
 def extract_between(text, start_phrase, end_phrase=None, include_phrases=True):
@@ -188,6 +189,7 @@ if start_button and gemini_key:
         for _ in range(25):
             output = st.session_state.blackboard_app.invoke(state)
             state = output
+            st.session_state.current_state = state
 
             # Build the blackboard display
             reports = state.get("blackboard", [])
@@ -196,9 +198,11 @@ if start_button and gemini_key:
                 reports_text = "\n\n---\n\n".join(reports)
                 recipe = extract_between(reports_text, "Report from Calendar Sync Agent", "Report from Calendar Sync Agent")
                 recipe = recipe + extract_between(reports_text, "Report from Motivation & Habit Builder", "Report from Motivation & Habit Builder")
+                
 
                 if recipe:
                     st.markdown(recipe)
+                    st.session_state.final_text = recipe
                 else :
                     st.info("No report found starting with Report from Calendar Sync Agent.")
             st.divider()
@@ -215,11 +219,12 @@ if start_button and gemini_key:
 
         # Final Result
         with final_plan_placeholder:
-            st.success("✅ Your Final Plan is Ready!")
-            st.subheader("🍽 Final Daily Plan")
+            # st.success("✅ Your Final Plan is Ready!")
+            # st.subheader("🍽 Final Daily Plan")
 
             final_text = "\n\n".join(state.get("blackboard", [])[-4:])  # last few reports
-            st.markdown(final_text)
+            # st.session_state.final_text = final_text
+            # st.markdown(final_text)
 
             # Download Button
             st.download_button(
@@ -228,12 +233,95 @@ if start_button and gemini_key:
                 file_name="blackboard_daily_plan.md",
                 mime="text/markdown"
             )
+            report_filename = f"daily_palnner_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+            with open(report_filename, "w", encoding="utf-8") as f:
+                f.write(final_text)
+            st.info(f"📁 Report saved locally as: **`{report_filename}`**")
+            st.session_state.report_filename = report_filename
             # if st.button("🔄 Generate New Plan"):
             #     st.session_state.clear()
             #     st.rerun()
-
+        st.session_state.planner_ready = True
+        st.session_state.counter = 0
     except Exception as e:
         st.error(f"Error occurred: {str(e)}")
+
+if st.session_state.get("planner_ready", False):
+    if st.session_state.counter > 0:
+        st.markdown(st.session_state.final_text)
+        st.download_button(
+            label="📥 Download Plan",
+            data=st.session_state.final_text,
+            key=15,
+            file_name="blackboard_daily_plan.md",
+            mime="text/markdown"
+        )
+        # report_filename = f"daily_palnner_{datetime.now().strftime('%Y%m%d_%H%S')}.md"
+        # with open(report_filename, "w", encoding="utf-8") as f:
+        #     f.write(st.session_state.final_text)
+        st.info(f"📁 Report saved locally as: **`{st.session_state.report_filename}`**")
+    st.session_state.counter +=1
+    st.subheader("💬 Chat with Your Finance Advisor")
+
+    # تاریخچه چت
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    for msg in st.session_state.chat_history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            st.markdown(msg.get("agent_output", ""))
+            if msg.get("output_path"):
+                report_filename = msg.get("output_path", "")
+                st.info(f"📁 Report saved locally as: **`{report_filename}`**")
+
+    # دریافت سوال کاربر
+    question = st.chat_input("Ask something about your plan...")
+
+    if question:
+        # اضافه کردن پیام کاربر به تاریخچه
+        st.session_state.chat_history.append({"role": "user", "content": question})
+        with st.chat_message("user"):
+            st.markdown(question)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                # توجه: اینجا از خود سوال کاربر استفاده می‌کنیم، نه user_input اولیه
+                response, state, output_type = handle_chat_message(
+                    user_message=question,   # ← اصلاح مهم
+                    current_state=st.session_state.current_state,
+                    finance_advisor=st.session_state.blackboard_app,
+                    llm=st.session_state.llm,
+                )
+                st.session_state.current_state = state
+                st.markdown(response)
+
+                if output_type:
+                    st.subheader("📌 Final Recommendation")
+                    final_output_text = "\n\n".join(state.get("blackboard", [])[-4:])
+
+                    recipe = extract_between(final_output_text, "Report from Calendar Sync Agent", "Report from Calendar Sync Agent")
+                    recipe = recipe + extract_between(final_output_text, "Report from Motivation & Habit Builder", "Report from Motivation & Habit Builder")
+                    
+                    st.markdown(recipe)
+                    # ذخیره فایل و دکمه دانلود (همانند قبل)
+                    final_text = "# Blackboard Advisor - Full Report\n\n" + final_output_text
+                    report_filename = f"daily_palnner_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                    with open(report_filename, "w", encoding="utf-8") as f:
+                        f.write(final_text)
+                    st.info(f"📁 Report saved locally as: **`{report_filename}`**")
+                    st.download_button(
+                        label="📥 Download Plan",
+                        key=2,
+                        data=final_text,
+                        file_name="blackboard_daily_plan.md",
+                        mime="text/markdown"
+                    )
+        if output_type:
+            st.session_state.chat_history.append({"role": "assistant", "content": response, "agent_output":final_output_text, "output_path":report_filename})
+        else : 
+            st.session_state.chat_history.append({"role": "assistant", "content": response})
+
 
 else:
     st.info("👈 Please enter your Gemini API key and daily tasks to generate your plan.")
