@@ -97,8 +97,6 @@ def rerun_full_analysis(state: Dict, finance_advisor):
     """Re-run the entire advisor graph"""
     # Reset temporary fields
     state["blackboard"] = ["hi"]
-    # state["risk_evaluation"] = None
-    # state["final_recommendation"] = None
     
     result = finance_advisor.invoke(state)
     return result
