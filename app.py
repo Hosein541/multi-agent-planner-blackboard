@@ -1,11 +1,12 @@
-import streamlit as st
-import time
 import os
 import re
-from langchain_google_genai import ChatGoogleGenerativeAI
-from board import build_blackboard_graph
-from chat import handle_chat_message
+import time
+import streamlit as st
 from datetime import datetime
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+from chat import handle_chat_message
+from board import build_blackboard_graph
 
 
 def extract_between(text, start_phrase, end_phrase=None, include_phrases=True):
@@ -43,6 +44,7 @@ def extract_between(text, start_phrase, end_phrase=None, include_phrases=True):
             return text[start_idx + len(start_phrase):].strip()
     
     return ""
+
 
 st.set_page_config(page_title="Blackboard Planner", layout="wide")
 st.title("📅 Blackboard Planner")
@@ -120,7 +122,6 @@ if start_button and gemini_key:
         "fixed_events": fixed_events,
         "constraints": constraints,
         "goals": goals,
-        "date": "2026-06-16"   # You can make this dynamic later
     }
 
     initial_state = {
@@ -142,50 +143,7 @@ if start_button and gemini_key:
         with status_placeholder:
             st.info("🤖 Agents are working on your plan...")
 
-        # for _ in range(25):  # Safety limit
 
-        #     output = st.session_state.blackboard_app.invoke(state)
-
-        #     state = output
-
-        #     reports = state.get("blackboard", [])
-        #     with recipe_report:
-
-        #         reports_text = "\n\n---\n\n".join(reports)
-        #         recipe = extract_between(reports_text, "Report from Calendar Sync Agent", "Report from Calendar Sync Agent")
-        #         recipe = "\n\n---\n\n".join(extract_between(reports_text, "Report from Motivation & Habit Builder:", "Report from Motivation & Habit Builder:"))
-        #         if recipe:
-        #             st.markdown(recipe)
-        #         else :
-        #             st.info("No report found starting with '**Report from Recipe Generator**'.")
-        #     st.divider()
-
-        #     if reports:
-        #         display_text = "\n\n---\n\n".join(reports)
-        #         bb_placeholder.markdown(display_text)
-        #     else:
-        #         bb_placeholder.markdown("*Waiting for blackboard updates...*")
-
-        #     if state.get("next_agent") == "FINISH":
-        #         break
-
-        #     time.sleep(0.8)
-
-        # # Final Result
-        # with final_plan_placeholder:
-        #     st.success("✅ Your Daily Plan is Ready!")
-        #     st.subheader("📌 Final Daily Plan")
-
-        #     final_text = "\n\n".join(state.get("blackboard", [])[-5:])  # Last few reports
-        #     st.markdown(final_text)
-
-        #     # Download Button
-        #     st.download_button(
-        #         label="📥 Download Plan as Markdown",
-        #         data=final_text,
-        #         file_name="blackboard_daily_plan.md",
-        #         mime="text/markdown"
-        #     )
         for _ in range(25):
             output = st.session_state.blackboard_app.invoke(state)
             state = output
@@ -219,12 +177,9 @@ if start_button and gemini_key:
 
         # Final Result
         with final_plan_placeholder:
-            # st.success("✅ Your Final Plan is Ready!")
-            # st.subheader("🍽 Final Daily Plan")
 
             final_text = "\n\n".join(state.get("blackboard", [])[-4:])  # last few reports
-            # st.session_state.final_text = final_text
-            # st.markdown(final_text)
+
 
             # Download Button
             st.download_button(
@@ -238,9 +193,7 @@ if start_button and gemini_key:
                 f.write(final_text)
             st.info(f"📁 Report saved locally as: **`{report_filename}`**")
             st.session_state.report_filename = report_filename
-            # if st.button("🔄 Generate New Plan"):
-            #     st.session_state.clear()
-            #     st.rerun()
+
         st.session_state.planner_ready = True
         st.session_state.counter = 0
     except Exception as e:
@@ -256,14 +209,12 @@ if st.session_state.get("planner_ready", False):
             file_name="blackboard_daily_plan.md",
             mime="text/markdown"
         )
-        # report_filename = f"daily_palnner_{datetime.now().strftime('%Y%m%d_%H%S')}.md"
-        # with open(report_filename, "w", encoding="utf-8") as f:
-        #     f.write(st.session_state.final_text)
+
         st.info(f"📁 Report saved locally as: **`{st.session_state.report_filename}`**")
     st.session_state.counter +=1
     st.subheader("💬 Chat with Your Finance Advisor")
 
-    # تاریخچه چت
+    #chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -275,18 +226,17 @@ if st.session_state.get("planner_ready", False):
                 report_filename = msg.get("output_path", "")
                 st.info(f"📁 Report saved locally as: **`{report_filename}`**")
 
-    # دریافت سوال کاربر
+    # recieve user question
     question = st.chat_input("Ask something about your plan...")
 
     if question:
-        # اضافه کردن پیام کاربر به تاریخچه
+        # add user message to the chat history
         st.session_state.chat_history.append({"role": "user", "content": question})
         with st.chat_message("user"):
             st.markdown(question)
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                # توجه: اینجا از خود سوال کاربر استفاده می‌کنیم، نه user_input اولیه
                 response, state, output_type = handle_chat_message(
                     user_message=question,   # ← اصلاح مهم
                     current_state=st.session_state.current_state,
@@ -304,11 +254,13 @@ if st.session_state.get("planner_ready", False):
                     recipe = recipe + extract_between(final_output_text, "Report from Motivation & Habit Builder", "Report from Motivation & Habit Builder")
                     
                     st.markdown(recipe)
-                    # ذخیره فایل و دکمه دانلود (همانند قبل)
+                    # save file and download button
                     final_text = "# Blackboard Advisor - Full Report\n\n" + final_output_text
                     report_filename = f"daily_palnner_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+
                     with open(report_filename, "w", encoding="utf-8") as f:
                         f.write(final_text)
+                    
                     st.info(f"📁 Report saved locally as: **`{report_filename}`**")
                     st.download_button(
                         label="📥 Download Plan",
