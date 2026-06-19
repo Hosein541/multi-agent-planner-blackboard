@@ -5,8 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 
 # ====================== BLACKBOARD STATE ======================
 class BlackboardState(TypedDict):
-    user_request: dict           # اطلاعات کاربر (تسک‌ها، انرژی، تقویم و ...)
-    blackboard: List[str]        # گزارش‌های Agentها
+    user_request: dict          
+    blackboard: List[str]       
     available_agents: List[str]
     next_agent: Optional[str]
 
@@ -142,7 +142,7 @@ def build_blackboard_graph(llm):
         "Critic Agent", llm
     )
 
-    # اضافه کردن نودها
+    # add nodes
     builder.add_node("Controller", controller_node)
     builder.add_node("Energy & Time Estimator", energy_agent)
     builder.add_node("Dependency Detector", dependency_agent)
@@ -168,7 +168,7 @@ def build_blackboard_graph(llm):
 
     builder.add_conditional_edges("Controller", route, agents_map)
 
-    # بازگشت به Controller بعد از هر Agent
+    # return to the controller after each node
     for agent in list(agents_map.keys())[:-1]:
         builder.add_edge(agent, "Controller")
 
